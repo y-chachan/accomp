@@ -1,8 +1,9 @@
 import numpy as np
+from pkg_resources import resource_filename
 
-species_name = np.loadtxt('species_info.txt', usecols=1, dtype=str)
+species_name = np.loadtxt(resource_filename(__name__, "data/species_info.txt"), usecols=1, dtype=str)
 conv = lambda x: float(x.decode().split('(')[0]) #this is to remove the uncertainty in parenthesis before importing
-atomic_weight = np.loadtxt('species_info.txt', usecols=3, converters=conv)
+atomic_weight = np.loadtxt(resource_filename(__name__, "data/species_info.txt"), usecols=3, converters=conv)
 atomic_weight_dict = {}
 for i, name in enumerate(species_name):
     atomic_weight_dict[name] = atomic_weight[i]

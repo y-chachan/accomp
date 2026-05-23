@@ -1,11 +1,25 @@
 import numpy as np
-from utils import get_elem_ratio, get_mass_fraction, get_elem_metal_mass_fraction
+from pkg_resources import resource_filename
+
+from .utils import get_elem_ratio, get_mass_fraction, get_elem_metal_mass_fraction
 
 class Star:
-    def __init__(self, mass=1., ref_abund='asplund_2021_solar_abundance.in'):
+    def __init__(self, mass=1., ref_abund='Asplund2021', custom_abund=None):
         self.mass = mass
-        self.abund = np.genfromtxt(ref_abund, usecols=(1,2))
-        self.species_name = np.genfromtxt(ref_abund, usecols=0, dtype=str)
+
+        if custom_abund is None:
+            assert(ref_abund is not None)
+            if ref_abund == 'Asplund2021':
+                ref_abund_file = resource_filename(__name__, "data/asplund_2021_solar_abundance.in")
+            elif ref_abund == 'Lodders2025':
+                ref_abund_file = resource_filename(__name__, "data/lodders_2025_solar_abundance.in")
+
+        if custom_abund is not None:
+            assert(ref_abund is None)
+            ref_abund_file = custom_abund
+
+        self.abund = np.genfromtxt(ref_abund_file, usecols=(1,2))
+        self.species_name = np.genfromtxt(ref_abund_file, usecols=0, dtype=str)
         self.abundance_dict = {}
 
         for i, name in enumerate(self.species_name):

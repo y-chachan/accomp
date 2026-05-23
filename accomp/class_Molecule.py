@@ -1,7 +1,7 @@
 import numpy as np
 import re
 from collections import defaultdict, Counter
-import utils
+from . import utils
 
 class Molecule():
     def __init__(self, formula, T_cond):

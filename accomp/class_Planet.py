@@ -1,5 +1,5 @@
 import numpy as np
-from utils import get_mass_fraction
+from .utils import get_mass_fraction
 
 class Planet:
     def __init__(self, star, measured_abund_dict):

@@ -1,6 +1,6 @@
 import numpy as np
 import astropy.constants as const
-from class_Molecule import MoleculeDict
+from .class_Molecule import MoleculeDict
 
 mu = 2.3 #mean molecular weight of disk gas
 
@@ -60,7 +60,7 @@ class Disk:
             
         if gas_enrichment is not None:
             for mol in gas_enrichment:
-                assert(mol.condensation_T < temp)
+                assert(mol.condensation_T <= temp)
                 modified_key = m + '_enriched'
                 gas_dict.molecule_dict[modified_key] = mol
 
