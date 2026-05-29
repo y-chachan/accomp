@@ -16,6 +16,7 @@ def get_elem_ratio(abund_dict, e1, e2):
    
    
 def get_mass_fraction(abundance_dict):
+    """returns the mass fraction of H (X), He (Y), and the total metal mass fraction (Z)."""
     X = 10**abundance_dict['H'] * atomic_weight_dict['H']
     Y = 10**abundance_dict['He'] * atomic_weight_dict['He']
     Z = 0.
@@ -31,6 +32,7 @@ def get_mass_fraction(abundance_dict):
 
 
 def get_elem_metal_mass_fraction(abundance_dict):
+    """returns Z_i/X and Z_i/Z for a metal species i, where Z_i is the mass fraction of species i, X is the mass fraction of H, and Z is the total metal mass fraction."""
     X, Y, Z = get_mass_fraction(abundance_dict)
 
     Zi_over_X = {}

@@ -5,6 +5,15 @@ from . import utils
 
 class Molecule():
     def __init__(self, formula, T_cond):
+        """        
+        Creates an instance of Molecule object.
+
+        Parameters
+        ----------
+        formula: chemical formula of the molecule
+        T_cond: condensation temperature of the molecule
+        """
+
         self.formula = formula
         self.elem_dict = self.parse_formula(formula)
         self.mol_weight = self.calculate_molecular_weight()
@@ -31,10 +40,13 @@ class Molecule():
         """
         Given an element and the fraction of that element contained in this molecule, calculate the fraction of other elements contained in this molecule.
         
+        Parameters
+        ----------
         star (stellar object): need to specify stellar composition because stellar ratios are needed to calculate the fraction for other elements
         elem (string): the element for which the fraction is specified
-        elem_frac (float): the fraction of the given element contained in this molecule
+        elem_frac (float): the fraction of the specified element contained in this molecule
         """
+
         self.star = star
         self.elem_frac_dict = {}
         self.elem_frac_dict[elem] = elem_frac
@@ -54,6 +66,15 @@ class Molecule():
 
 class EnrichedMolecule(Molecule):
     def __init__(self, formula, T_cond):
+        """        
+        Creates an instance of EnrichedMolecule object. This class should be used to specify enhancement of an element in the gas or solid phase. It allows one to relax the rule that elemental abundances must add up to unity.
+
+        Parameters
+        ----------
+        formula: chemical formula of the molecule
+        T_cond: condensation temperature of the molecule
+        """
+        
         super().__init__(formula, T_cond)
 
     #TODO:write a function to specify spatially variable enrichment
@@ -65,14 +86,25 @@ class EnrichedMolecule(Molecule):
 
 class MoleculeDict():
     def __init__(self, star):
+        """        
+        Creates an instance of MoleculeDict object that can contain many Molecule objects and manipulate them.
+
+        Parameters
+        ----------
+        star: input an instance of class_Star for stellar properties, in particular, its composition.
+        """
+
         self.molecule_dict = {}
         self.star = star
-        #self.set_default_composition()
 
     @property
     def summed_abundances(self):
-        sum = Counter()
+        """
+        The summed fraction for each element contained in different molecules in the MoleculeDict. It should add up to 1 for each element if there is no extra enrichment of an element in the solid or gas phase. 
+        This function is set up as a property to make the summed abundance an attribute that updates any time the MoleculeDict is updated.
+        """
 
+        sum = Counter()
         enriched_molecules = False
 
         for mol in self.molecule_dict.values():
@@ -91,6 +123,10 @@ class MoleculeDict():
             
     @property
     def elem_dict(self):
+        """A dictionary that flips the molecule dictionary and shows for each element the molecules they exist in and the fraction of the element contained in these molecules.
+        This dictionary is set up as a property so that it becomes an attribute of MoleculeDict and gives the most up-to-date view if changes have been made to MoleculeDict.
+        """
+
         out = defaultdict(dict)
         for outer_k, inner in self.molecule_dict.items():
             for inner_k, value in inner.elem_frac_dict.items():
@@ -98,6 +134,8 @@ class MoleculeDict():
         return dict(out)
 
     def get_mol_Tcond(self):
+        """create a dictionary of condensation temperatures of molecules and return a sorted copy."""
+
         Tcond_dict = {}
         for k, mol in self.molecule_dict.items():
             Tcond_dict[k] = mol.condensation_T
@@ -153,6 +191,8 @@ class MoleculeDict():
 
 
     def catch_remaining_fraction(self):
+        """any remaining amount of elements O, C, S, and N are put into refractories. Useful after setting up a customized molecule dict."""
+
         summed_abundances = self.summed_abundances
         for sp, frac in summed_abundances.items():
             if (frac < 1.):
