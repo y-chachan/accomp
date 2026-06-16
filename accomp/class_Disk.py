@@ -25,7 +25,7 @@ class Disk:
         self.semimajor = np.logspace(np.log10(r_min), np.log10(r_max), n_r) * const.au.cgs.value
         self.Omega_K = np.power(const.G.cgs.value * self.mstar / self.semimajor**3, 1/2)
         self.per = 2 * np.pi / self.Omega_K
-        self.d2g = 0.01
+        self.d2g = d2g
         self.alpha = alpha
 
     def set_temp_struct(self, M_dot_solar=1e-8, dlnMdotdlnM=2., dlnLdlnM=1.5):
@@ -57,12 +57,51 @@ class Disk:
         self.H_g = self.c_s / self.Omega_K
         self.gamma = np.gradient(np.log(self.Omega_K**2 / self.c_s), np.log(self.semimajor))
 
-    def get_pebble_Miso(self):
-        """calculate the pebble isolation mass based on Bitsch et al. 2018. Requires the disk temperature profile to be set in advance."""
+        #calculate the pebble isolation mass in Earth masses based on Bitsch et al. 2018
+        self.pebble_Miso = 25. * (self.mstar/const.M_sun.cgs.value) * (self.H_g / self.semimajor / 0.05)**3 * (0.34 * (-3 / np.log10(self.alpha))**4 + 0.66) * (1 - (self.gamma + 2.5)/6)
+
+    def get_pebble_Miso(self, distance):
+        """Get the pebble isolation mass at a given semi-major axis. Requires the disk temperature profile to be set in advance."""
 
         assert(hasattr(self, 'T_disk')), "Need to set disk temperature profile first"
+        return 10**interp1d(np.log10(self.semimajor/const.au.cgs.value), np.log10(self.pebble_Miso))(np.log10(distance))
 
-        self.pebble_Miso = 25. * (self.mstar/const.M_sun.cgs.value) * (self.H_g / self.semimajor / 0.05)**3 * (0.34 * (-3 / np.log10(self.alpha))**4 + 0.66) * (1 - (self.gamma + 2.5)/6)
+    def get_nxMMSN_sigma(self, distance, n_MMSN):
+        """Calculate the surface density of a n x MMSN disk at a given distance (au)"""
+        return n_MMSN * 33. * (distance)**-1.5
+
+    def get_planetesimal_feeding_zone(self, distance, planet_mass, n_MMSN, n_RHill):
+        """Calculates and returns the mass of planetesimals in Earth masses that in the feeding zone of a planet. 
+        
+        Parameters
+        ----------
+        distance: from the host star in au
+        planet_mass: in Jupiter masses
+        n_MMSN: multiplicative factor for MMSN surface density
+        n_RHill: size of the feeding zone in multiples of the Hill radius
+        """
+
+        pl_fz = 2 * np.pi * (2 * n_RHill) * (distance * const.au.cgs.value)**2 * np.power(planet_mass * const.M_jup.cgs.value / 3 / self.mstar, 1/3) * self.get_nxMMSN_sigma(distance, n_MMSN) / const.M_earth.cgs.value
+        return pl_fz
+
+    def get_Toomre_Q(self, sigma_gas=None, sigma_solids=None):
+        """Calculate the Toomre Q stability criterion for the disk. Must specify the surface density of the gas or solids. If solid surface density is specified, the calculation uses the disk dust-to-gas ratio to obtain gas surface density. Surface density must be an array that specifies its value at all the distances in the disk model. The use of a single float value will print a warning message. 
+        
+        Parameters
+        ----------
+        sigma_gas: array of gas surface density calculated for the disk semimajor axis values
+        sigma_solids: array of solid surface density calculated for the disk semimajor axis values
+        """
+
+        assert(np.logical_xor(sigma_gas is not None, sigma_solids is not None))
+
+        if sigma_solids is not None:
+            sigma_gas = sigma_solids / self.d2g
+
+        if sigma_gas is float:
+            print('Warning: using a single value for sigma_gas at all orbital distances. This is likely erraneous and not compatible with physical expectations.')
+
+        return self.c_s * self.Omega_K / (np.pi * const.G.cgs.value * sigma_gas)
 
     def get_temperature_location(self, temp):
         """obtain the semimajor axis corresponding to a specifed temperature. Useful for calculating snowline location"""
@@ -95,8 +134,8 @@ class Disk:
         Parameters
         ----------
         mol_dict: an instance of MoleculeDict with set composition
-        temp: temperature at which the solid and gas composition is desired
-        location: location at which the solid and gas composition is desired
+        temp: temperature at which the solid and gas composition is desired, in K
+        location: location at which the solid and gas composition is desired, in au
         """
 
         assert(np.logical_xor(temp is not None, location is not None))
