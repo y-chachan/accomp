@@ -24,6 +24,7 @@ class Disk:
         self.mstar = self.star.mass * const.M_sun.cgs.value
         self.semimajor = np.logspace(np.log10(r_min), np.log10(r_max), n_r) * const.au.cgs.value
         self.Omega_K = np.power(const.G.cgs.value * self.mstar / self.semimajor**3, 1/2)
+        self.v_K = self.Omega_K * self.semimajor
         self.per = 2 * np.pi / self.Omega_K
         self.d2g = d2g
         self.alpha = alpha
@@ -56,6 +57,8 @@ class Disk:
         self.c_s = np.sqrt(const.k_B.cgs.value * self.T_disk / mu / const.m_p.cgs.value)
         self.H_g = self.c_s / self.Omega_K
         self.gamma = np.gradient(np.log(self.Omega_K**2 / self.c_s), np.log(self.semimajor))
+        self.eta = - self.gamma * self.c_s**2 / (2 * self.v_K**2)
+        self.v_gas = np.sqrt(self.alpha * self.c_s**2 + self.eta**2 * self.v_K**2)
 
         #calculate the pebble isolation mass in Earth masses based on Bitsch et al. 2018
         self.pebble_Miso = 25. * (self.mstar/const.M_sun.cgs.value) * (self.H_g / self.semimajor / 0.05)**3 * (0.34 * (-3 / np.log10(self.alpha))**4 + 0.66) * (1 - (self.gamma + 2.5)/6)
@@ -66,9 +69,38 @@ class Disk:
         assert(hasattr(self, 'T_disk')), "Need to set disk temperature profile first"
         return 10**interp1d(np.log10(self.semimajor/const.au.cgs.value), np.log10(self.pebble_Miso))(np.log10(distance))
 
+
+    def get_flow_isolation(self, distance, f_flow_const=1.75, vfrag=1e2, d2g=1e-2): #, t_age=1e6):
+        assert(hasattr(self, 'T_disk')), "Need to set disk temperature profile first"
+
+        St_frag = vfrag**2 / (3 * self.alpha * self.c_s**2)
+        St_drift = d2g * self.v_K**2 / (np.abs(self.gamma) * self.c_s**2)
+        # t_age *= 365. * 86400.
+        # St_age = self.semimajor / (self.c_s**2 / self.v_K * t_age)
+        St_max = np.minimum(St_frag, St_drift)
+
+        if hasattr(self, 'flow_isolation') is False:
+            self.flow_isolation = self.mstar * (self.H_g / self.semimajor)**3 * np.minimum(f_flow_const**2 * self.c_s / self.v_gas * St_max, f_flow_const**1.5 * St_max**0.5) / const.M_earth.cgs.value
+
+        return 10**interp1d(np.log10(self.semimajor/const.au.cgs.value), np.log10(self.flow_isolation))(np.log10(distance))
+
+
     def get_nxMMSN_sigma(self, distance, n_MMSN):
         """Calculate the surface density of a n x MMSN disk at a given distance (au)"""
         return n_MMSN * 33. * (distance)**-1.5
+
+    def get_planetesimal_isolation(self, distance, n_MMSN, n_RHill):
+        """Calculates the planetesimal isolation mass in Earth masses. 
+        
+        Parameters
+        ----------
+        distance: from the host star in au
+        n_MMSN: multiplicative factor for MMSN surface density
+        n_RHill: size of the feeding zone in multiples of the Hill radius
+        """
+
+        planetesimal_isolation = (4 * np.pi * n_RHill * (distance * const.au.cgs.value)**2 * self.get_nxMMSN_sigma(distance, n_MMSN) / (3 * self.mstar)**(1/3))**(3/2) / const.M_earth.cgs.value
+        return planetesimal_isolation 
 
     def get_planetesimal_feeding_zone(self, distance, planet_mass, n_MMSN, n_RHill):
         """Calculates and returns the mass of planetesimals in Earth masses that in the feeding zone of a planet. 
@@ -127,7 +159,7 @@ class Disk:
 
             return Tcond_loc
 
-    def get_solid_gas_composition(self, mol_dict, temp=None, location=None):
+    def get_solid_gas_composition(self, mol_dict, temp=None, location=None, gas_enrichment=None, solid_enrichment=None):
         """        
         Return dictionaries of solid and gas composition at a specified temperature or location. Only one of them should be specified.
 
@@ -136,6 +168,8 @@ class Disk:
         mol_dict: an instance of MoleculeDict with set composition
         temp: temperature at which the solid and gas composition is desired, in K
         location: location at which the solid and gas composition is desired, in au
+        gas_enrichment: a list of instances of Enriched Molecule class for species that are enriched in the gas phase
+        solid_enrichment: a list of instances of Enriched Molecule class for species that are enriched in the solid phase
         """
 
         assert(np.logical_xor(temp is not None, location is not None))
@@ -149,6 +183,24 @@ class Disk:
                 solids_dict.molecule_dict[m] = mol
             else:
                 gas_dict.molecule_dict[m] = mol
+
+        if gas_enrichment is not None:
+            for mol in gas_enrichment:
+                assert(isinstance(mol, EnrichedMolecule))
+                if mol.condensation_T > temp:
+                    print('Skipping the gas enrichmnet of ' + mol.formula + ' because local T is colder than condensation T')
+                    continue
+                modified_key = m + '_enriched'
+                gas_dict.molecule_dict[modified_key] = mol
+
+        if solid_enrichment is not None:
+            for mol in solid_enrichment:
+                assert(isinstance(mol, EnrichedMolecule))
+                if mol.condensation_T < temp:
+                    print('Skipping the solid enrichment of ' + mol.formula + ' because local T is warmer than condensation T')
+                    continue
+                modified_key = m + '_enriched'
+                solids_dict.molecule_dict[modified_key] = mol
 
         solids = dict(solids_dict.summed_abundances)
         gas = dict(gas_dict.summed_abundances)
