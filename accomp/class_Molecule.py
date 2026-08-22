@@ -142,7 +142,7 @@ class MoleculeDict():
 
         return dict(sorted(Tcond_dict.items(), key=lambda x: x[1], reverse=True))
 
-    def set_default_composition(self):
+    def set_default_composition(self, refractory_C_depletion=True):
         """set up molecules for all the key species"""
         #C-bearing species
         self.molecule_dict['CO'] = Molecule('CO', 30.)
@@ -150,6 +150,20 @@ class MoleculeDict():
 
         self.molecule_dict['CO2'] = Molecule('CO2', 70.) #Fray & Schmitt 2009
         self.molecule_dict['CO2'].set_elem_fraction(self.star, 'C', 0.1)
+
+        if refractory_C_depletion:
+            #this is to mimic a gradient in C/Si observed in the solar system
+            #keep a small fraction of C in solids at ~2 au, to match the most pristine meteorites
+            self.molecule_dict['C_refactory_1'] = Molecule('C', 300.)
+            self.molecule_dict['C_refactory_1'].set_elem_fraction(self.star, 'C', 0.1)
+
+            #assign the rest of refractory C to a phase which is present in solids only at ~CO2 snowline
+            self.molecule_dict['C_refactory_2'] = Molecule('C', 70.)
+            self.molecule_dict['C_refactory_2'].set_elem_fraction(self.star, 'C', 0.4)
+        else:
+            #assume all of refractory C is present in solids up to 300 K, no refractory C depletion 
+            self.molecule_dict['C_refactory'] = Molecule('C', 300.)
+            self.molecule_dict['C_refactory'].set_elem_fraction(self.star, 'C', 0.5)
 
         #N-bearing species
         self.molecule_dict['N2'] = Molecule('N2', 25.)
@@ -217,3 +231,34 @@ class MoleculeDict():
                 else:
                     print('Species' + sp + ' not implemented yet.' )
 
+
+    def set_Chachan_2023_composition(self):
+
+        #C-bearing species
+        self.molecule_dict['C_refractory'] = Molecule('C', 300.) #Fray & Schmitt 2009
+        self.molecule_dict['C_refractory'].set_elem_fraction(self.star, 'C', 0.12)
+        
+        self.molecule_dict['C_volatile'] = Molecule('C', 30.)
+        self.molecule_dict['C_volatile'].set_elem_fraction(self.star, 'C', 0.88)
+
+        #O-bearing species
+        self.molecule_dict['O_refractory'] = Molecule('O', 1350.)
+        self.molecule_dict['O_refractory'].set_elem_fraction(self.star, 'O', 0.25)
+        
+        self.molecule_dict['H2O'] = Molecule('H2O', 170.) #Fray & Schmitt 2009
+        self.molecule_dict['H2O'].set_elem_fraction(self.star, 'O', 0.48)
+
+        self.molecule_dict['O_volatile'] = Molecule('O', 30.)
+        self.molecule_dict['O_volatile'].set_elem_fraction(self.star, 'O', 0.27)
+
+        #refractories
+        self.molecule_dict['Na'] = Molecule('Na', 1000.) #Lodders 2003
+        self.molecule_dict['Na'].set_elem_fraction(self.star, 'Na', 1.)
+
+        for k in ['Si', 'Mg', 'Fe', 'Ni']:
+            self.molecule_dict[k] = Molecule(k, 1350.) #Lodders 2003
+            self.molecule_dict[k].set_elem_fraction(self.star, k, 1.)
+
+        for k in ['Al', 'Ca']:
+            self.molecule_dict[k] = Molecule(k, 1600.) #Lodders 2003
+            self.molecule_dict[k].set_elem_fraction(self.star, k, 1.)
