@@ -5,4 +5,8 @@
 
 accomp allows one to connect atmospheric composition measurements to the planet's building blocks and make inferences about the planet's formation history. It can take results of atmospheric retrievals and calculate the implied metal mass fraction and absolute metal mass for planets orbiting host stars with arbitrary composition. One can also infer the different sources of the metals if the abundance of a sufficient number of elements is known, especially if these elements include both refractories (elements that trace solids) and volatiles. The calculated metal mass can be easily compared to simple predictions from formation models.
 
-If you use accomp in your work, please cite the two papers at the head of this README file.
+accomp is pip-installable and it is easy to modify. We recommend installation by downloading the GitHub repository and after navigating to the main folder, using
+
+pip install -e . 
+
+The examples folder contains Jupyter notebooks that will guide the user and introduce the various modules available in accomp. If you use accomp in your work, please cite the two papers at the head of this README file.
