@@ -66,11 +66,11 @@ class Planet:
 
 
     @staticmethod
-    def simulate_refractory_measurement(measured_abund, refractory_list, solids_comp):
+    def simulate_refractory_measurement(measured_abund, most_ref_element, refractory_list, solids_comp):
         """For a given composition of disk solids, take the element with largest fraction in solids amongst the measured ones and use it to calculate the enrichment we would expect for a fully refractory species. """
 
         measured_elem_solids_comp = {key: solids_comp[key] for key in measured_abund.keys()}
-        most_ref_element = max(measured_elem_solids_comp, key=measured_elem_solids_comp.get)
+        #most_ref_element = max(measured_elem_solids_comp, key=measured_elem_solids_comp.get)
 
         simulated_measurements = {}
         for ref in refractory_list:
