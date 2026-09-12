@@ -69,9 +69,6 @@ class Planet:
     def simulate_refractory_measurement(measured_abund, most_ref_element, refractory_list, solids_comp):
         """For a given composition of disk solids, take the element with largest fraction in solids amongst the measured ones and use it to calculate the enrichment we would expect for a fully refractory species. """
 
-        measured_elem_solids_comp = {key: solids_comp[key] for key in measured_abund.keys()}
-        #most_ref_element = max(measured_elem_solids_comp, key=measured_elem_solids_comp.get)
-
         simulated_measurements = {}
         for ref in refractory_list:
             if ref in measured_abund.keys():
@@ -127,14 +124,9 @@ class Planet:
         main_ref_elem: The element amongst the measured ones that will constitute the refractory reference. 
         """
 
-        #TODO: add this to example
-
         f_v_dict = {}
 
         for elem in self.species_name:
-            #if np.all(self.measured_abund[elem] / self.measured_abund[main_ref_elem] == 1.):
-            # if elem == main_ref_elem:
-            #     continue
             f_v_dict[elem] = (self.measured_abund[elem] - 1.) / (self.measured_abund[main_ref_elem] - 1.)
 
         return f_v_dict

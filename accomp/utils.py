@@ -8,8 +8,6 @@ atomic_weight_dict = {}
 for i, name in enumerate(species_name):
     atomic_weight_dict[name] = atomic_weight[i]
 
-#TODO: we also need something to indicate whether a species is volatile or refractory
-
 
 def get_elem_ratio(abund_dict, e1, e2):
     return np.power(10, abund_dict[e1] - abund_dict[e2]) 
