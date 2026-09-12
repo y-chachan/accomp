@@ -1,4 +1,4 @@
-# ACCOMP
+# accomp
 
 [![arXiv](http://img.shields.io/badge/arXiv-2608.23682-orange.svg)](https://arxiv.org/abs/2608.23682) 
 [![arXiv](http://img.shields.io/badge/arXiv-2211.09080-orange.svg)](https://arxiv.org/abs/2211.09080)
